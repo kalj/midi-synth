@@ -1,0 +1,36 @@
+# Version: clang-format-11
+# Reference:
+#   http://releases.llvm.org/11.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+BasedOnStyle: Google
+BreakBeforeBraces: Linux
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true
+AlignConsecutiveDeclarations: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
+#AllowShortCaseLabelsOnASingleLine: true
+
+AllowAllArgumentsOnNextLine: false
+BinPackArguments: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackParameters: false
+
+# When ColumnLimit=0, then AlwaysBreakAfterReturnType is only
+# enforced if return type is 'void'
+ColumnLimit: 120
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+KeepEmptyLinesAtTheStartOfBlocks: true
+
+IncludeBlocks: Preserve
+IndentWidth: 4
+
+ReflowComments: false
+SpacesBeforeTrailingComments: 1
+
+BreakBeforeInlineASMColon: Always
+
+---
