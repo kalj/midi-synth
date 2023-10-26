@@ -10,27 +10,40 @@ int main(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    int       buffer_len = SAMPLERATE / 10;
-    sample_t *buffer     = malloc(buffer_len * sizeof(sample_t));
+    int n_samples = SAMPLERATE; // 1 sec
+
+    int       block_len = 64;
+    sample_t *block     = malloc(block_len * sizeof(sample_t));
 
     Synth synth = {};
-    synth_init(&synth, SAMPLERATE, 1);
-
-    synth_handle_note(&synth, 1, 440);
-
-    synth_fill_buffer(&synth, buffer, buffer_len);
+    synth_init(&synth);
 
     const char *fname = "wave.dat";
+    FILE       *fp    = fopen(fname, "w");
 
-    FILE *fp = fopen(fname, "w");
+    for (int bk = 0; bk * block_len < n_samples; bk++) {
+        if (bk == 8) {
+            synth_handle_note(&synth, 1, 69);
+        }
 
-    for (int i = 0; i < buffer_len; i++) {
-        fprintf(fp, "%d\n", buffer[i]);
+        if (bk == 100) {
+            synth_handle_note(&synth, 1, 64);
+        }
+
+        if (bk == 600) {
+            synth_handle_note(&synth, 0, 64);
+        }
+
+        synth_process(&synth, block, block_len);
+
+        for (int i = 0; i < block_len; i++) {
+            fprintf(fp, "%d\n", block[i]);
+        }
     }
 
     fclose(fp);
 
-    free(buffer);
+    free(block);
 
     return 0;
 }

@@ -3,19 +3,23 @@
 
 #include "common.h"
 
+#include "oscillator.h"
+
 typedef struct _Synth {
-    int     samplerate;
-    int     n_channels;
-    phase_t phase;
-    int      note;
-    int      on;
-    float    bend;
-    float    max_pitch_bend;
+    Oscillator osc;
+
+    float MAX_PITCH_BEND;
+
+    int   note;
+    int   on;
+    float bend;
+
+    // Envelope env;
 } Synth;
 
-void synth_init(Synth *synth, int samplerate, int n_channels);
+void synth_init(Synth *synth);
 
-void synth_fill_buffer(Synth *synth, void *void_buffer, int period_size);
+void synth_process(Synth *synth, sample_t *buffer, int size);
 
 void synth_handle_note(Synth *synth, int on, int note);
 

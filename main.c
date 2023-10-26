@@ -18,7 +18,7 @@
 
 /* #define BUFFER_SIZE 128 */
 /* #define N_CHANNELS 1 */
-#define N_CHANNELS 2
+#define N_CHANNELS 1
 
 int main(int argc, char *argv[])
 {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     CHK(port, "Failed to create port");
 
     Synth synth = {};
-    synth_init(&synth, SAMPLERATE, N_CHANNELS);
+    synth_init(&synth);
 
     printf("Starting main loop\n");
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
         /* struct timespec t1, t2, t3; */
         /* clock_gettime(CLOCK_REALTIME, &t1); */
 
-        synth_fill_buffer(&synth, buffer, period_size);
+        synth_process(&synth, buffer, period_size);
         /* clock_gettime(CLOCK_REALTIME, &t2); */
 
         int rc = snd_pcm_writei(pcm_handle, buffer, period_size);
