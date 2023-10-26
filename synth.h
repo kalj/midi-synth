@@ -7,10 +7,10 @@ typedef struct _Synth {
     int     samplerate;
     int     n_channels;
     phase_t phase;
-    int note;
-    int     on;
-    float bend;
-    float max_pitch_bend;
+    int      note;
+    int      on;
+    float    bend;
+    float    max_pitch_bend;
 } Synth;
 
 void synth_init(Synth *synth, int samplerate, int n_channels);

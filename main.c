@@ -20,12 +20,10 @@
 /* #define N_CHANNELS 1 */
 #define N_CHANNELS 2
 
-
 int main(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
-
 
     snd_pcm_t *pcm_handle;
 
@@ -98,7 +96,6 @@ int main(int argc, char *argv[])
     CHK(snd_pcm_hw_params_get_buffer_time(params, &period_time, NULL), "Failed to get buffer time");
     printf("buffer time        = %d us\n", period_time);
 
-    
     CHK(snd_pcm_hw_params_get_periods(params, &val, NULL), "Failed to get periods");
     printf("periods            = %d\n", val);
 
@@ -132,7 +129,6 @@ int main(int argc, char *argv[])
 
     Synth synth = {};
     synth_init(&synth, SAMPLERATE, N_CHANNELS);
-
 
     printf("Starting main loop\n");
 
@@ -200,7 +196,7 @@ int main(int argc, char *argv[])
                            ev->data.note.channel,
                            ev->data.note.note,
                            ev->data.note.velocity);
-                    synth_handle_note(&synth, 0,ev->data.note.note);
+                    synth_handle_note(&synth, 0, ev->data.note.note);
                     break;
                 case SND_SEQ_EVENT_CONTROLLER:
                     printf("Control   - ch=%d param=%d value=%d\n",
@@ -214,17 +210,15 @@ int main(int argc, char *argv[])
                            ev->data.control.param,
                            ev->data.control.value);
                     break;
-                case SND_SEQ_EVENT_PITCHBEND:
-                    {
-                        float fval = ev->data.control.value/(float)(1<<13);
-                        printf("Pitchbend - ch=%d param=%d value=%d  fval=%f\n",
-                               ev->data.control.channel,
-                               ev->data.control.param,
-                               ev->data.control.value,
-                               fval);
-                        synth_handle_bend(&synth,fval); 
-                    }
-                    break;
+                case SND_SEQ_EVENT_PITCHBEND: {
+                    float fval = ev->data.control.value / (float)(1 << 13);
+                    printf("Pitchbend - ch=%d param=%d value=%d  fval=%f\n",
+                           ev->data.control.channel,
+                           ev->data.control.param,
+                           ev->data.control.value,
+                           fval);
+                    synth_handle_bend(&synth, fval);
+                } break;
                 case SND_SEQ_EVENT_PORT_SUBSCRIBED:
                     printf("Subscribe - dest=%d:%d sender=%d:%d\n",
                            ev->data.connect.dest.client,
