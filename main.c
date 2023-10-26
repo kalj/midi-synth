@@ -5,7 +5,6 @@
 #include <alsa/error.h>
 #include <alsa/pcm.h>
 #include <alsa/seq.h>
-#include <math.h>
 #include <unistd.h>
 
 #define CHK(stm, msg)                                                                              \
@@ -21,21 +20,12 @@
 /* #define N_CHANNELS 1 */
 #define N_CHANNELS 2
 
-float midi_freq_table[256];
-
-void initFreqTable()
-{
-    for (int i = 0; i < 128; i++) {
-        midi_freq_table[i] = 440.0f * pow(2, (i - 69) / 12.f);
-    }
-}
 
 int main(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
 
-    initFreqTable();
 
     snd_pcm_t *pcm_handle;
 
@@ -173,8 +163,8 @@ int main(int argc, char *argv[])
     /*     } */
     /* } */
 
-    int note = 35;
-    synth_handle_note(&synth, 1, midi_freq_table[note]);
+    /* int note = 35; */
+    /* synth_handle_note(&synth, 1, midi_freq_table[note]); */
     while (1) {
 
         /* if(i%128 == 0) { */
@@ -203,14 +193,14 @@ int main(int argc, char *argv[])
                            ev->data.note.channel,
                            ev->data.note.note,
                            ev->data.note.velocity);
-                    synth_handle_note(&synth, 1, midi_freq_table[ev->data.note.note]);
+                    synth_handle_note(&synth, 1, ev->data.note.note);
                     break;
                 case SND_SEQ_EVENT_NOTEOFF:
                     printf("Note Off  - ch=%d note=%d vel=%d\n",
                            ev->data.note.channel,
                            ev->data.note.note,
                            ev->data.note.velocity);
-                    synth_handle_note(&synth, 0, midi_freq_table[ev->data.note.note]);
+                    synth_handle_note(&synth, 0,ev->data.note.note);
                     break;
                 case SND_SEQ_EVENT_CONTROLLER:
                     printf("Control   - ch=%d param=%d value=%d\n",
@@ -225,10 +215,15 @@ int main(int argc, char *argv[])
                            ev->data.control.value);
                     break;
                 case SND_SEQ_EVENT_PITCHBEND:
-                    printf("Pitchbend - ch=%d param=%d value=%d\n",
-                           ev->data.control.channel,
-                           ev->data.control.param,
-                           ev->data.control.value);
+                    {
+                        float fval = ev->data.control.value/(float)(1<<13);
+                        printf("Pitchbend - ch=%d param=%d value=%d  fval=%f\n",
+                               ev->data.control.channel,
+                               ev->data.control.param,
+                               ev->data.control.value,
+                               fval);
+                        synth_handle_bend(&synth,fval); 
+                    }
                     break;
                 case SND_SEQ_EVENT_PORT_SUBSCRIBED:
                     printf("Subscribe - dest=%d:%d sender=%d:%d\n",
