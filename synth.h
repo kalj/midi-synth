@@ -5,13 +5,14 @@
 
 #include "oscillator.h"
 
+#include <stdbool.h>
+
 typedef struct _Synth {
     Oscillator osc;
 
     float MAX_PITCH_BEND;
 
-    int   note;
-    int   on;
+    bool  on;
     float bend;
 
     // Envelope env;
