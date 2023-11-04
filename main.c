@@ -20,35 +20,37 @@
 /* #define N_CHANNELS 1 */
 #define N_CHANNELS 1
 
-int main(int argc, char *argv[])
-{
-    (void)argc;
-    (void)argv;
+#if defined(SAMPLE_TYPE_F32)
+#define DESIRED_PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
+#elif defined(SAMPLE_TYPE_I8)
+#define DESIRED_PCM_FORMAT SND_PCM_FORMAT_S8
+#elif defined(SAMPLE_TYPE_I16)
+#define DESIRED_PCM_FORMAT SND_PCM_FORMAT_S16_LE
+#elif defined(SAMPLE_TYPE_I32)
+#define DESIRED_PCM_FORMAT SND_PCM_FORMAT_S32_LE
+#endif
 
-    snd_pcm_t *pcm_handle;
+snd_pcm_t        *pcm_handle;
+snd_seq_t        *seq_handle;
+snd_pcm_uframes_t period_size;
+
+int pcm_init()
+{
 
     CHK(snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0), "Failed to open PCM");
 
-    /* snd_pcm_set_params(pcm_handle, */
-    /*                SND_PCM_FORMAT_S16_LE, */
-    /*                SND_PCM_ACCESS_RW_INTERLEAVED, */
-    /*                2, */
-    /*                SAMPLERATE, 0, 20000); */
+    /**
+     * Set parameters
+     */
 
     snd_pcm_hw_params_t *params;
     snd_pcm_hw_params_alloca(&params);
+#if 0
     CHK(snd_pcm_hw_params_any(pcm_handle, params), "Failed in params_any");
 
-    /* Set parameters */
     CHK(snd_pcm_hw_params_set_access(pcm_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED), "Can't set interleaved mode");
 
-    /* SND_PCM_FORMAT_S16_LE */
-    snd_pcm_format_t requested_format = BIT_DEPTH == 8    ? SND_PCM_FORMAT_U8
-                                        : BIT_DEPTH == 16 ? SND_PCM_FORMAT_S16_LE
-                                        : BIT_DEPTH == 32 ? SND_PCM_FORMAT_S32_LE
-                                                          : -1;
-
-    CHK(snd_pcm_hw_params_set_format(pcm_handle, params, requested_format), "Can't set format");
+    CHK(snd_pcm_hw_params_set_format(pcm_handle, params, DESIRED_PCM_FORMAT), "Can't set format");
     CHK(snd_pcm_hw_params_set_channels(pcm_handle, params, N_CHANNELS), "Can't set channels number");
 
     unsigned int requested_rate = SAMPLERATE;
@@ -57,29 +59,33 @@ int main(int argc, char *argv[])
     CHK(snd_pcm_hw_params_set_period_size(pcm_handle, params, 64, 0), "Can't set period size");
     CHK(snd_pcm_hw_params_set_periods(pcm_handle, params, 8, 0), "Can't set periods");
 
-    /* Write parameters */
     CHK(snd_pcm_hw_params(pcm_handle, params), "Can't set harware parameters");
-
-    /* Read information */
-    printf("PCM name:  '%s'\n", snd_pcm_name(pcm_handle));
-    printf("PCM state: %s\n", snd_pcm_state_name(snd_pcm_state(pcm_handle)));
+#else
+    CHK(snd_pcm_set_params(pcm_handle,
+                           DESIRED_PCM_FORMAT,
+                           SND_PCM_ACCESS_RW_INTERLEAVED,
+                           N_CHANNELS,
+                           SAMPLERATE,
+                           0,
+                           20000),
+        "Failed setting parameters");
+    CHK(snd_pcm_hw_params_current(pcm_handle, params), "Failed to get current hw params");
+    // 20ms -> 220x4 periods
+    // 10ms -> 110x4 periods
+    // 5ms -> 55x4 periods
+#endif
 
     unsigned int n_channels;
-    CHK(snd_pcm_hw_params_get_channels(params, &n_channels), "Failed to get number of params");
-    printf("channels           = %u\n", n_channels);
-
     unsigned int rate;
+    CHK(snd_pcm_hw_params_get_channels(params, &n_channels), "Failed to get number of params");
     CHK(snd_pcm_hw_params_get_rate(params, &rate, 0), "Failed to get rate");
+    printf("channels           = %u\n", n_channels);
     printf("rate               = %d Hz\n", rate);
-
-    unsigned int val;
-    CHK(snd_pcm_hw_params_get_access(params, (snd_pcm_access_t *)&val), "Failed to get access type");
-    printf("access type        = %s\n", snd_pcm_access_name((snd_pcm_access_t)val));
 
     snd_pcm_format_t fmt;
     CHK(snd_pcm_hw_params_get_format(params, &fmt), "Failed to get format");
-
     int bits_per_sample = snd_pcm_format_width(fmt);
+
     printf("format             = '%s' (%s) bits:%d\n",
            snd_pcm_format_name(fmt),
            snd_pcm_format_description(fmt),
@@ -87,34 +93,22 @@ int main(int argc, char *argv[])
 
     unsigned int period_time;
     CHK(snd_pcm_hw_params_get_period_time(params, &period_time, NULL), "Failed to get period time");
-    printf("period time        = %d us\n", period_time);
-
-    snd_pcm_uframes_t period_size;
     CHK(snd_pcm_hw_params_get_period_size(params, &period_size, NULL), "Failed to get period size");
-    printf("period size        = %lu frames\n", period_size);
-
-    CHK(snd_pcm_hw_params_get_buffer_time(params, &period_time, NULL), "Failed to get buffer time");
-    printf("buffer time        = %d us\n", period_time);
-
-    CHK(snd_pcm_hw_params_get_periods(params, &val, NULL), "Failed to get periods");
-    printf("periods            = %d\n", val);
+    printf("period:            = %lu frames (%d us)\n", period_size, period_time);
 
     snd_pcm_uframes_t buffer_size;
+    unsigned int      periods;
+    unsigned int      buffer_time;
+    CHK(snd_pcm_hw_params_get_buffer_time(params, &buffer_time, NULL), "Failed to get buffer time");
+    CHK(snd_pcm_hw_params_get_periods(params, &periods, NULL), "Failed to get periods");
     CHK(snd_pcm_hw_params_get_buffer_size(params, &buffer_size), "Failed to get buffer size");
-    printf("buffer size        = %lu frames\n", buffer_size);
+    printf("buffer size        = %lu frames (%d us, %d periods)\n", buffer_size, buffer_time, periods);
 
-    size_t bytes_per_frame = N_CHANNELS * (bits_per_sample / 8);
-    printf("bytes_per_frame    = %lu\n", bytes_per_frame);
-    size_t size = period_size * bytes_per_frame;
-    printf("period buffer size = %lu\n", size);
+    return 0;
+}
 
-    void *buffer = malloc(size);
-
-    /* uint64_t fill_buffer_us = 0; */
-    /* uint64_t pcm_write_us   = 0; */
-    /* int      n_measurements = 0; */
-
-    snd_seq_t *seq_handle;
+int midi_init()
+{
     /* CHK(snd_seq_open(&seq_handle, "default", SND_SEQ_OPEN_INPUT, 0), "Failed to open sequencer"); */
     CHK(snd_seq_open(&seq_handle, "default", SND_SEQ_OPEN_INPUT, SND_SEQ_NONBLOCK), "Failed to open sequencer");
 
@@ -127,50 +121,28 @@ int main(int argc, char *argv[])
     /* SND_SEQ_PORT_TYPE_APPLICATION); */
     CHK(port, "Failed to create port");
 
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
+
+    pcm_init();
+
+    size_t bytes_per_frame = N_CHANNELS * sizeof(sample_t);
+    size_t size            = period_size * bytes_per_frame;
+    void  *buffer          = malloc(size);
+
+    midi_init();
+
     Synth synth = {};
-    synth_init(&synth);
+    synth_init(&synth, 0.1, 0.5, 0.5, 1);
 
     printf("Starting main loop\n");
 
-    /* int seq_nfds = snd_seq_poll_descriptors_count(seq_handle, POLLIN); */
-    /* int pcm_nfds = snd_pcm_poll_descriptors_count (pcm_handle); */
-
-    /* struct pollfd *pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + pcm_nfds)); */
-    /* struct pollfd *pfds = (struct pollfd *)alloca(sizeof(struct pollfd) * (seq_nfds + pcm_nfds)); */
-    /* snd_seq_poll_descriptors(seq_handle, pfds, seq_nfds, POLLIN); */
-    /* snd_pcm_poll_descriptors (pcm_handle, pfds+seq_nfds, pcm_nfds); */
-
-    /* while (1) { */
-    /*     if (poll (pfds, seq_nfds + pcm_nfds, 1000) > 0) { */
-    /*         for (int l1 = 0; l1 < seq_nfds; l1++) { */
-    /*             if (pfds[l1].revents > 0) { */
-    /*                 midi_callback(); */
-    /*             } */
-    /*         } */
-    /*         for (int l1 = seq_nfds; l1 < seq_nfds + pcm_nfds; l1++) {     */
-    /*             if (pfds[l1].revents > 0) { */
-    /*                 int n_processed = playback_callback(BUFSIZE); */
-    /*                 if (n_processed < BUFSIZE) { */
-    /*                     fprintf (stderr, "xrun !\n"); */
-    /*                     snd_pcm_prepare(pcm_handle); */
-    /*                 } */
-    /*             } */
-    /*         }         */
-    /*     } */
-    /* } */
-
-    /* int note = 35; */
-    /* synth_handle_note(&synth, 1, midi_freq_table[note]); */
     while (1) {
-
-        /* if(i%128 == 0) { */
-
-        /*     note++; */
-        /*     printf("New note: %3d\n", note); */
-        /*     synth_handle_note(&synth, 1, midi_freq_table[note]); */
-        /* } */
-        /* i++; */
-        /* int banan = snd_seq_event_input_pending(seq_handle, 0); */
 
         snd_seq_event_t *ev = NULL;
         /* CHK(snd_seq_event_input(seq_handle, &ev), "Failed to get input event"); */
@@ -231,15 +203,10 @@ int main(int argc, char *argv[])
                     break;
             }
         }
-        /* #if 0 */
-        /* struct timespec t1, t2, t3; */
-        /* clock_gettime(CLOCK_REALTIME, &t1); */
 
         synth_process(&synth, buffer, period_size);
-        /* clock_gettime(CLOCK_REALTIME, &t2); */
 
         int rc = snd_pcm_writei(pcm_handle, buffer, period_size);
-        /* clock_gettime(CLOCK_REALTIME, &t3); */
 
         if (rc == -EPIPE) {
             /* EPIPE means underrun */
@@ -250,20 +217,6 @@ int main(int argc, char *argv[])
         } else if (rc != (int)period_size) {
             fprintf(stderr, "short write, write %d frames\n", rc);
         }
-
-        /* fill_buffer_us += (t2.tv_sec * 1000000 + t2.tv_nsec / 1000) - (t1.tv_sec * 1000000 + t1.tv_nsec / 1000); */
-        /* pcm_write_us += (t3.tv_sec * 1000000 + t3.tv_nsec / 1000) - (t2.tv_sec * 1000000 + t2.tv_nsec / 1000); */
-        /* n_measurements++; */
-
-        /* if ((fill_buffer_us + pcm_write_us) > 1000000) { */
-        /*     printf("Fill buffer: %f us\n", (float)(fill_buffer_us) / n_measurements); */
-        /*     printf("PCM write:   %f us\n", (float)(pcm_write_us) / n_measurements); */
-
-        /*     fill_buffer_us = 0; */
-        /*     pcm_write_us   = 0; */
-        /*     n_measurements = 0; */
-        /* } */
-        /* #endif */
     }
 
     free(buffer);

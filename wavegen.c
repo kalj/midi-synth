@@ -37,7 +37,11 @@ int main(int argc, char *argv[])
         synth_process(&synth, block, block_len);
 
         for (int i = 0; i < block_len; i++) {
+#ifdef SAMPLE_TYPE_F32
+            fprintf(fp, "%e\n", block[i]);
+#else
             fprintf(fp, "%d\n", block[i]);
+#endif
         }
     }
 

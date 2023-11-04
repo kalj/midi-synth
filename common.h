@@ -4,20 +4,21 @@
 #include <stdint.h>
 
 #define SAMPLERATE 44100
-
-// #define BIT_DEPTH 8
-// #define BIT_DEPTH 16
-#define BIT_DEPTH 32
+// #define SAMPLE_TYPE_F32
+#define SAMPLE_TYPE_I32
 
 // typedef uint8_t phase_t;
 // typedef uint16_t phase_t;
 typedef uint32_t phase_t;
-#if BIT_DEPTH == 8
+
+#ifdef SAMPLE_TYPE_I8
 typedef int8_t sample_t;
-#elif BIT_DEPTH == 16
+#elif defined(SAMPLE_TYPE_I16)
 typedef int16_t sample_t;
-#elif BIT_DEPTH == 32
+#elif defined(SAMPLE_TYPE_I32)
 typedef int32_t sample_t;
+#elif defined(SAMPLE_TYPE_F32)
+typedef float sample_t;
 #endif
 
 #endif /* COMMON_H */
