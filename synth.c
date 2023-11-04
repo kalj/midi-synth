@@ -77,6 +77,9 @@ void synth_handle_note(Synth *synth, int on, int note)
 {
 
     if (on) {
+
+        // assume that on note was not already on!!!
+
         int note_idx = notes_pool_head;
 
         if (note_idx != NO_NODE) { // pool not empty
