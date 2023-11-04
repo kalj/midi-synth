@@ -16,7 +16,8 @@ int main(int argc, char *argv[])
     sample_t *block     = malloc(block_len * sizeof(sample_t));
 
     Synth synth = {};
-    synth_init(&synth);
+    /* synth_init(&synth, 0,0,1, 0); */
+    synth_init(&synth, 0.1, 0.1, 0.5, 0.5);
 
     const char *fname = "wave.dat";
     FILE       *fp    = fopen(fname, "w");

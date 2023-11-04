@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(synth C)
 
-add_library(synth STATIC synth.c oscillator.c)
+add_library(synth STATIC synth.c oscillator.c envelope.c)
 target_link_libraries(synth m)
 
 add_executable(midi_synth main.c)

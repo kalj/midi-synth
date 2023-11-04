@@ -9,11 +9,11 @@ static float midi_freq_table[256];
 
 void synth_process(Synth *synth, sample_t *buffer, int size)
 {
-    if (synth->on) {
-        oscillator_process(&synth->osc, buffer, size);
-        /* envelope_process(&synth->env, buffer, size); */
-    } else {
+    if (synth->env.state == ENV_STATE_OFF) {
         memset(buffer, 0, sizeof(sample_t) * size);
+    } else {
+        oscillator_process(&synth->osc, buffer, size);
+        envelope_process(&synth->env, buffer, size);
     }
 }
 
@@ -32,7 +32,7 @@ static int8_t notes_head      = NO_NODE;
 
 static NoteNode notes[MAX_HISTORY_LEN];
 
-void synth_init(Synth *synth)
+void synth_init(Synth *synth, float A, float D, float S, float R)
 {
     for (int i = 0; i < 128; i++) {
         midi_freq_table[i] = 440.0f * pow(2, (i - 69) / 12.f);
@@ -51,26 +51,32 @@ void synth_init(Synth *synth)
     }
 
     oscillator_init(&synth->osc);
-    /* envelope_init(&synth->env); */
+    envelope_init(&synth->env, A, D, S, R);
     synth->MAX_PITCH_BEND = powf(2, 2 / 12.0); // 200 cent
     synth->on             = 0;
 }
 
 static void update_oscillator(Synth *synth)
 {
+    bool new_on = true;
     if (notes_head == NO_NODE) {
-        synth->on = false;
-        return;
+        new_on = false;
     }
-    float note_freq = midi_freq_table[notes[notes_head].note];
-    float freq      = note_freq * powf(synth->MAX_PITCH_BEND, synth->bend);
-    oscillator_set_freq(&synth->osc, freq);
 
-    if (!synth->on) {
+    if (new_on) {
+        float note_freq = midi_freq_table[notes[notes_head].note];
+        float freq      = note_freq * powf(synth->MAX_PITCH_BEND, synth->bend);
+        oscillator_set_freq(&synth->osc, freq);
+    }
+
+    if (new_on && !synth->on) {
         oscillator_reset(&synth->osc);
+        envelope_gate(&synth->env, true);
+    } else if (!new_on && synth->on) {
+        envelope_gate(&synth->env, false);
     }
 
-    synth->on = true;
+    synth->on = new_on;
 }
 
 void synth_handle_note(Synth *synth, int on, int note)

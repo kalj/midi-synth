@@ -3,6 +3,7 @@
 
 #include "common.h"
 
+#include "envelope.h"
 #include "oscillator.h"
 
 #include <stdbool.h>
@@ -15,10 +16,10 @@ typedef struct _Synth {
     bool  on;
     float bend;
 
-    // Envelope env;
+    Envelope env;
 } Synth;
 
-void synth_init(Synth *synth);
+void synth_init(Synth *synth, float A, float D, float S, float R);
 
 void synth_process(Synth *synth, sample_t *buffer, int size);
 
