@@ -7,14 +7,13 @@ import matplotlib.pyplot as plt
 fn = sys.argv[1]
 
 with open(fn) as f:
-    signal = np.array([int(l) for l in f.read().splitlines()])
-
-
-signal = signal/(1<<31);
+    lines = f.read().splitlines()
+try:
+    signal = np.array([int(l) for l in lines])
+    signal = signal / (1 << 31)
+except:
+    signal = np.array([float(l) for l in lines])
 
 plt.plot(signal)
 
 plt.show()
-
-
-        
