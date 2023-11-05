@@ -7,13 +7,13 @@
 
 static float midi_freq_table[256];
 
-void synth_process(Synth *synth, sample_t *buffer, int size)
+void synth_process_block(Synth *synth, sample_t *buffer)
 {
     if (synth->env.state == ENV_STATE_OFF) {
-        memset(buffer, 0, sizeof(sample_t) * size);
+        memset(buffer, 0, sizeof(sample_t) * BLOCK_SIZE);
     } else {
-        oscillator_process(&synth->osc, buffer, size);
-        envelope_process(&synth->env, buffer, size);
+        oscillator_process_block(&synth->osc, buffer);
+        envelope_process_block(&synth->env, buffer);
     }
 }
 

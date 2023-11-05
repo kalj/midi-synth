@@ -21,11 +21,11 @@ void envelope_gate(Envelope *env, bool on)
     }
 }
 
-void envelope_process(Envelope *env, sample_t *buffer, int len)
+void envelope_process_block(Envelope *env, sample_t *buffer)
 {
     float dt    = 1.0f / SAMPLERATE;
     float inv_a = 1.0f / env->attack;
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
         float gain = 0.0f;
 
         switch (env->state) {

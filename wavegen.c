@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 
     int n_samples = SAMPLERATE; // 1 sec
 
-    int       block_len = 64;
+    int       block_len = BLOCK_SIZE;
     sample_t *block     = malloc(block_len * sizeof(sample_t));
 
     Synth synth = {};
@@ -22,20 +22,20 @@ int main(int argc, char *argv[])
     const char *fname = "wave.dat";
     FILE       *fp    = fopen(fname, "w");
 
-    for (int bk = 0; bk * block_len < n_samples; bk++) {
-        if (bk == 8) {
+    for (int i = 0; i < n_samples; i += BLOCK_SIZE) {
+        if (i == BLOCK_SIZE) {
             synth_handle_note(&synth, 1, 69);
         }
 
-        if (bk == 100) {
+        if (i == BLOCK_SIZE * 25) {
             synth_handle_note(&synth, 1, 64);
         }
 
-        if (bk == 600) {
+        if (i == BLOCK_SIZE * 150) {
             synth_handle_note(&synth, 0, 64);
         }
 
-        synth_process(&synth, block, block_len);
+        synth_process_block(&synth, block);
 
         for (int i = 0; i < block_len; i++) {
 #ifdef SAMPLE_TYPE_F32

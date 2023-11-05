@@ -14,6 +14,6 @@ void oscillator_reset(Oscillator *osc);
 
 void oscillator_set_freq(Oscillator *osc, float freq);
 
-void oscillator_process(Oscillator *osc, sample_t *buf, int size);
+void oscillator_process_block(Oscillator *osc, sample_t *buf);
 
 #endif /* OSCILLATOR_H */

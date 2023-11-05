@@ -59,13 +59,13 @@ static inline sample_t triangle_wave(phase_t phase)
 #endif
 }
 
-void oscillator_process(Oscillator *osc, sample_t *buffer, int size)
+void oscillator_process_block(Oscillator *osc, sample_t *buffer)
 {
     float   phase_per_sample = osc->freq / SAMPLERATE;
     phase_t dphase           = phase_per_sample * ((phase_t)~0);
 
     sample_t value;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
         /* value = saw_wave(osc->phase); */
         /* value     = square_wave(osc->phase); */
         value = triangle_wave(osc->phase);

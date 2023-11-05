@@ -45,7 +45,7 @@ int pcm_init()
 
     snd_pcm_hw_params_t *params;
     snd_pcm_hw_params_alloca(&params);
-#if 0
+#if 1
     CHK(snd_pcm_hw_params_any(pcm_handle, params), "Failed in params_any");
 
     CHK(snd_pcm_hw_params_set_access(pcm_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED), "Can't set interleaved mode");
@@ -56,8 +56,8 @@ int pcm_init()
     unsigned int requested_rate = SAMPLERATE;
     CHK(snd_pcm_hw_params_set_rate_near(pcm_handle, params, &requested_rate, 0), "Can't set rate");
 
-    CHK(snd_pcm_hw_params_set_period_size(pcm_handle, params, 64, 0), "Can't set period size");
-    CHK(snd_pcm_hw_params_set_periods(pcm_handle, params, 8, 0), "Can't set periods");
+    CHK(snd_pcm_hw_params_set_period_size(pcm_handle, params, BLOCK_SIZE, 0), "Can't set period size");
+    CHK(snd_pcm_hw_params_set_periods(pcm_handle, params, 4, 0), "Can't set periods");
 
     CHK(snd_pcm_hw_params(pcm_handle, params), "Can't set harware parameters");
 #else
@@ -95,6 +95,7 @@ int pcm_init()
     CHK(snd_pcm_hw_params_get_period_time(params, &period_time, NULL), "Failed to get period time");
     CHK(snd_pcm_hw_params_get_period_size(params, &period_size, NULL), "Failed to get period size");
     printf("period:            = %lu frames (%d us)\n", period_size, period_time);
+    CHK(period_size == BLOCK_SIZE, "Failed to set block size");
 
     snd_pcm_uframes_t buffer_size;
     unsigned int      periods;
@@ -227,9 +228,9 @@ int main()
             handle_midi_event(&synth, ev);
         }
 
-        synth_process(&synth, buffer, period_size);
+        synth_process_block(&synth, buffer);
 
-        int rc = snd_pcm_writei(pcm_handle, buffer, period_size);
+        int rc = snd_pcm_writei(pcm_handle, buffer, BLOCK_SIZE);
 
         if (rc == -EPIPE) {
             /* EPIPE means underrun */

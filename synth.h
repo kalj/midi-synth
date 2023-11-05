@@ -21,7 +21,7 @@ typedef struct _Synth {
 
 void synth_init(Synth *synth, float A, float D, float S, float R);
 
-void synth_process(Synth *synth, sample_t *buffer, int size);
+void synth_process_block(Synth *synth, sample_t *buffer);
 
 void synth_handle_note(Synth *synth, int on, int note);
 

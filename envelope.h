@@ -29,6 +29,6 @@ typedef struct _Envelope {
 
 void envelope_init(Envelope *env, float attack, float decay, float sustain, float release);
 void envelope_gate(Envelope *env, bool on);
-void envelope_process(Envelope *env, sample_t *buffer, int len);
+void envelope_process_block(Envelope *env, sample_t *buffer);
 
 #endif /* ENVELOPE_H */
