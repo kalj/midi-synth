@@ -124,11 +124,81 @@ int midi_init()
     return 0;
 }
 
-int main(int argc, char *argv[])
+void handle_control_event(Synth *synth, snd_seq_ev_ctrl_t *ctrl)
 {
-    (void)argc;
-    (void)argv;
+    switch (ctrl->param) {
+        case 44:
+            synth->env.attack = ctrl->value / 127.0f;
+            break;
+        case 45:
+            synth->env.decay = ctrl->value / 127.0f;
+            break;
+        case 46:
+            synth->env.sustain = ctrl->value / 127.0f;
+            break;
+        case 47:
+            synth->env.release = ctrl->value / 127.0f;
+            break;
+    }
+}
+void handle_midi_event(Synth *synth, snd_seq_event_t *ev)
+{
+    // 30 - SND_SEQ_EVENT_START
+    // 32 - SND_SEQ_EVENT_STOP
+    // 36 - SND_SEQ_EVENT_CLOCK
 
+    switch (ev->type) {
+        case SND_SEQ_EVENT_NOTEON:
+            printf("Note On   - ch=%d note=%d vel=%d\n",
+                   ev->data.note.channel,
+                   ev->data.note.note,
+                   ev->data.note.velocity);
+            synth_handle_note(synth, 1, ev->data.note.note);
+            break;
+        case SND_SEQ_EVENT_NOTEOFF:
+            printf("Note Off  - ch=%d note=%d vel=%d\n",
+                   ev->data.note.channel,
+                   ev->data.note.note,
+                   ev->data.note.velocity);
+            synth_handle_note(synth, 0, ev->data.note.note);
+            break;
+        case SND_SEQ_EVENT_CONTROLLER:
+            printf("Control   - ch=%d param=%d value=%d\n",
+                   ev->data.control.channel,
+                   ev->data.control.param,
+                   ev->data.control.value);
+            handle_control_event(synth, &ev->data.control);
+            break;
+        case SND_SEQ_EVENT_PGMCHANGE:
+            printf("PgmChange - ch=%d param=%d value=%d\n",
+                   ev->data.control.channel,
+                   ev->data.control.param,
+                   ev->data.control.value);
+            break;
+        case SND_SEQ_EVENT_PITCHBEND: {
+            float fval = ev->data.control.value / (float)(1 << 13);
+            printf("Pitchbend - ch=%d param=%d value=%d  fval=%f\n",
+                   ev->data.control.channel,
+                   ev->data.control.param,
+                   ev->data.control.value,
+                   fval);
+            synth_handle_bend(synth, fval);
+        } break;
+        case SND_SEQ_EVENT_PORT_SUBSCRIBED:
+            printf("Subscribe - dest=%d:%d sender=%d:%d\n",
+                   ev->data.connect.dest.client,
+                   ev->data.connect.dest.port,
+                   ev->data.connect.sender.client,
+                   ev->data.connect.sender.port);
+            break;
+        default:
+            printf("Unknown   - type=%d\n", ev->type);
+            break;
+    }
+}
+
+int main()
+{
     pcm_init();
 
     size_t bytes_per_frame = N_CHANNELS * sizeof(sample_t);
@@ -154,54 +224,7 @@ int main(int argc, char *argv[])
         } else if (ret < 0) {
             printf("Got some error: %d\n", ret);
         } else {
-
-            switch (ev->type) {
-                case SND_SEQ_EVENT_NOTEON:
-                    printf("Note On   - ch=%d note=%d vel=%d\n",
-                           ev->data.note.channel,
-                           ev->data.note.note,
-                           ev->data.note.velocity);
-                    synth_handle_note(&synth, 1, ev->data.note.note);
-                    break;
-                case SND_SEQ_EVENT_NOTEOFF:
-                    printf("Note Off  - ch=%d note=%d vel=%d\n",
-                           ev->data.note.channel,
-                           ev->data.note.note,
-                           ev->data.note.velocity);
-                    synth_handle_note(&synth, 0, ev->data.note.note);
-                    break;
-                case SND_SEQ_EVENT_CONTROLLER:
-                    printf("Control   - ch=%d param=%d value=%d\n",
-                           ev->data.control.channel,
-                           ev->data.control.param,
-                           ev->data.control.value);
-                    break;
-                case SND_SEQ_EVENT_PGMCHANGE:
-                    printf("PgmChange - ch=%d param=%d value=%d\n",
-                           ev->data.control.channel,
-                           ev->data.control.param,
-                           ev->data.control.value);
-                    break;
-                case SND_SEQ_EVENT_PITCHBEND: {
-                    float fval = ev->data.control.value / (float)(1 << 13);
-                    printf("Pitchbend - ch=%d param=%d value=%d  fval=%f\n",
-                           ev->data.control.channel,
-                           ev->data.control.param,
-                           ev->data.control.value,
-                           fval);
-                    synth_handle_bend(&synth, fval);
-                } break;
-                case SND_SEQ_EVENT_PORT_SUBSCRIBED:
-                    printf("Subscribe - dest=%d:%d sender=%d:%d\n",
-                           ev->data.connect.dest.client,
-                           ev->data.connect.dest.port,
-                           ev->data.connect.sender.client,
-                           ev->data.connect.sender.port);
-                    break;
-                default:
-                    printf("Unknown   - type=%d\n", ev->type);
-                    break;
-            }
+            handle_midi_event(&synth, ev);
         }
 
         synth_process(&synth, buffer, period_size);

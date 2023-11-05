@@ -5,6 +5,7 @@
 #include <math.h>
 
 #define PHASE_MIDPOINT (((phase_t)(-1)) >> 1)
+
 #ifdef SAMPLE_TYPE_F32
 #define SAMPLE_MAX 1.0f
 #define SAMPLE_MIN -1.0f
