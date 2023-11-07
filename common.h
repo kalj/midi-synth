@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #define SAMPLERATE 44100
-// #define SAMPLE_TYPE_F32
-#define SAMPLE_TYPE_I32
+#define SAMPLE_TYPE_F32
+// #define SAMPLE_TYPE_I32
 
 // typedef uint8_t phase_t;
 // typedef uint16_t phase_t;
