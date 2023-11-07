@@ -139,6 +139,11 @@ void handle_control_event(Synth *synth, snd_seq_ev_ctrl_t *ctrl)
         case 47:
             synth->env.release = ctrl->value / 127.0f;
             break;
+        case 62: {
+            float cutoff =
+                FILTER_CUTOFF_MIN + ctrl->value * (FILTER_CUTOFF_MAX - FILTER_CUTOFF_MIN) / 127; // mapped to 20 - 2000
+            filter_init(&synth->flt, cutoff);
+        } break;
     }
 }
 void handle_midi_event(Synth *synth, snd_seq_event_t *ev)

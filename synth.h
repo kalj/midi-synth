@@ -4,6 +4,7 @@
 #include "common.h"
 
 #include "envelope.h"
+#include "filter.h"
 #include "oscillator.h"
 
 #include <stdbool.h>
@@ -17,6 +18,7 @@ typedef struct _Synth {
     float bend;
 
     Envelope env;
+    Filter   flt;
 } Synth;
 
 void synth_init(Synth *synth, float A, float D, float S, float R);

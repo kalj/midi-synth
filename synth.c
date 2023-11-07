@@ -1,6 +1,7 @@
 #include "synth.h"
 
 #include "common.h"
+#include "filter.h"
 
 #include <math.h>
 #include <string.h>
@@ -13,6 +14,7 @@ void synth_process(Synth *synth, sample_t *buffer, int size)
         memset(buffer, 0, sizeof(sample_t) * size);
     } else {
         oscillator_process(&synth->osc, buffer, size);
+        filter_process(&synth->flt, buffer, size);
         envelope_process(&synth->env, buffer, size);
     }
 }
@@ -52,6 +54,7 @@ void synth_init(Synth *synth, float A, float D, float S, float R)
 
     oscillator_init(&synth->osc);
     envelope_init(&synth->env, A, D, S, R);
+    filter_init(&synth->flt, FILTER_CUTOFF_MAX);
     synth->MAX_PITCH_BEND = powf(2, 2 / 12.0); // 200 cent
     synth->on             = 0;
 }
