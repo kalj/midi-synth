@@ -67,8 +67,8 @@ void oscillator_process(Oscillator *osc, sample_t *buffer, int size)
     sample_t value;
     for (int i = 0; i < size; i++) {
         /* value = saw_wave(osc->phase); */
-        /* value     = square_wave(osc->phase); */
-        value = triangle_wave(osc->phase);
+        value = square_wave(osc->phase);
+        /* value = triangle_wave(osc->phase); */
         /* value     = SAMPLE_MAX * sin(osc->phase / (float)(PHASE_MIDPOINT)*M_PI); */
         buffer[i] = value;
         osc->phase += dphase;

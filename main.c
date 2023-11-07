@@ -208,7 +208,7 @@ int main()
     midi_init();
 
     Synth synth = {};
-    synth_init(&synth, 0.1, 0.5, 0.5, 1);
+    synth_init(&synth, 0.1, 0.5, 0.5, 0.1);
 
     printf("Starting main loop\n");
 
