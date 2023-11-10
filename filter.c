@@ -5,7 +5,7 @@
 
 void filter_init(Filter *flt, float cutoff)
 {
-    // clamp to [20,2000] Hz
+    // clamp to [FILTER_CUTOFF_MIN, FILTER_CUTOFF_MAX] Hz
     if (cutoff < FILTER_CUTOFF_MIN) cutoff = FILTER_CUTOFF_MIN;
     if (cutoff > FILTER_CUTOFF_MAX) cutoff = FILTER_CUTOFF_MAX;
 
@@ -40,4 +40,3 @@ void filter_process(Filter *flt, sample_t *buffer, int len)
         buffer[i] = y;
     }
 }
-

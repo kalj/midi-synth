@@ -5,6 +5,7 @@
 #include <alsa/error.h>
 #include <alsa/pcm.h>
 #include <alsa/seq.h>
+#include <math.h>
 #include <unistd.h>
 
 #define CHK(stm, msg)                                                                              \
@@ -140,8 +141,7 @@ void handle_control_event(Synth *synth, snd_seq_ev_ctrl_t *ctrl)
             synth->env.release = ctrl->value / 127.0f;
             break;
         case 62: {
-            float cutoff =
-                FILTER_CUTOFF_MIN + ctrl->value * (FILTER_CUTOFF_MAX - FILTER_CUTOFF_MIN) / 127; // mapped to 20 - 2000
+            float cutoff = FILTER_CUTOFF_MIN * powf(FILTER_CUTOFF_MAX / FILTER_CUTOFF_MIN, (float)ctrl->value / 127);
             filter_init(&synth->flt, cutoff);
         } break;
     }

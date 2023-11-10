@@ -11,7 +11,7 @@ typedef struct {
 } Biquad;
 
 #define FILTER_N_BIQUADS  3
-#define FILTER_CUTOFF_MIN 20.0f
+#define FILTER_CUTOFF_MIN 200.0f
 #define FILTER_CUTOFF_MAX 5000.0f
 
 typedef struct _Filter {
