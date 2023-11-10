@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifdef FILTER_VARIANT_BW
 void filter_init(Filter *flt, float cutoff)
 {
     // clamp to [FILTER_CUTOFF_MIN, FILTER_CUTOFF_MAX] Hz
@@ -40,3 +41,55 @@ void filter_process(Filter *flt, sample_t *buffer, int len)
         buffer[i] = y;
     }
 }
+
+#else
+
+static void filter_update_coeffs(Filter *flt)
+{
+    float w_cutoff = flt->cutoff * (1.0f / (SAMPLERATE / 2.0f));
+    float q1       = 1.0 - w_cutoff;
+    flt->p         = w_cutoff + 0.8 * w_cutoff * q1;
+    flt->f         = flt->p + flt->p - 1.0;
+    flt->q         = flt->resonance * (1.0 + 0.5 * q1 * (1.0 - q1 + 5.6 * q1 * q1));
+}
+
+void filter_init(Filter *flt, float cutoff, float resonance)
+{
+    // clamp to [FILTER_CUTOFF_MIN, FILTER_CUTOFF_MAX] Hz
+    if (cutoff < FILTER_CUTOFF_MIN) cutoff = FILTER_CUTOFF_MIN;
+    if (cutoff > FILTER_CUTOFF_MAX) cutoff = FILTER_CUTOFF_MAX;
+    flt->cutoff = cutoff;
+
+    if (resonance < 0.0f) resonance = 0;
+    if (resonance > 1.0f) resonance = 1.0f;
+    flt->resonance = resonance;
+
+    filter_update_coeffs(flt);
+}
+
+void filter_process(Filter *flt, sample_t *buffer, int len)
+{
+    for (int i = 0; i < len; i++) {
+
+        sample_t b0new = buffer[i] - flt->q * flt->b4; //feedback
+
+        float b1new = (b0new + flt->b0) * flt->p - flt->b1 * flt->f;
+
+        float b2new = (b1new + flt->b1) * flt->p - flt->b2 * flt->f;
+        float b3new = (b2new + flt->b2) * flt->p - flt->b3 * flt->f;
+        float b4new = (b3new + flt->b3) * flt->p - flt->b4 * flt->f;
+        b4new       = b4new - b4new * b4new * b4new * 0.166667; //clipping
+
+        flt->b0 = b0new;
+        flt->b1 = b1new;
+        flt->b2 = b2new;
+        flt->b3 = b3new;
+        flt->b4 = b4new;
+
+        buffer[i] = b4new; // lp
+        /* buffer[i] = b0new-b4new; //hp */
+        /* buffer[i] = 3.0 * (b3new - b4new); // bp */
+    }
+}
+
+#endif

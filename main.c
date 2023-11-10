@@ -142,8 +142,18 @@ void handle_control_event(Synth *synth, snd_seq_ev_ctrl_t *ctrl)
             break;
         case 62: {
             float cutoff = FILTER_CUTOFF_MIN * powf(FILTER_CUTOFF_MAX / FILTER_CUTOFF_MIN, (float)ctrl->value / 127);
+#ifdef FILTER_VARIANT_BW
             filter_init(&synth->flt, cutoff);
+#else
+            filter_init(&synth->flt, cutoff, synth->flt.resonance);
+#endif
         } break;
+#ifndef FILTER_VARIANT_BW
+        case 63: {
+            float resonance = (float)ctrl->value / 127;
+            filter_init(&synth->flt, synth->flt.cutoff, resonance);
+        } break;
+#endif
     }
 }
 void handle_midi_event(Synth *synth, snd_seq_event_t *ev)

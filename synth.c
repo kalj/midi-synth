@@ -54,7 +54,11 @@ void synth_init(Synth *synth, float A, float D, float S, float R)
 
     oscillator_init(&synth->osc);
     envelope_init(&synth->env, A, D, S, R);
+#ifdef FILTER_VARIANT_BW
     filter_init(&synth->flt, FILTER_CUTOFF_MAX);
+#else
+    filter_init(&synth->flt, FILTER_CUTOFF_MAX, 0.5f);
+#endif
     synth->MAX_PITCH_BEND = powf(2, 2 / 12.0); // 200 cent
     synth->on             = 0;
 }
