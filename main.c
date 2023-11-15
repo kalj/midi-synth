@@ -240,6 +240,7 @@ int main()
             printf("Got some error: %d\n", ret);
         } else {
             handle_midi_event(&synth, ev);
+            continue;
         }
 
         synth_process(&synth, buffer, period_size);
